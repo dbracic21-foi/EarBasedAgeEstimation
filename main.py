@@ -17,7 +17,6 @@ def run_script(script_name):
         sys.exit(1)
 
 if __name__ == "__main__":
-    print("\n🚀 Pokrećem kompletan pipeline za procjenu dobi iz slika uha...\n")
 
     install_requirements()
     run_script("src/preprocess.py")
