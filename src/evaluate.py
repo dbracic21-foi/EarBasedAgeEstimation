@@ -61,13 +61,21 @@ print(f"Precision: {precision:.2f}")
 print(f"Recall: {recall:.2f}")
 print(f"F1 Score: {f1:.2f}")
 
-with open("./result/evaluation.txt", "w") as f:
-    f.write(f"Mean Absolute Error: {mae:.2f}\n")
-    f.write(f"R2 Score: {r2:.2f}\n")
-    f.write(f"Accuracy: {accuracy:.2f}\n")
-    f.write(f"Precision: {precision:.2f}\n")
-    f.write(f"Recall: {recall:.2f}\n")
-    f.write(f"F1 Score: {f1:.2f}\n")
+evaluation_results = f"""
+===========================================
+        📊 EVALUACIJA MODELA
+===========================================
+🔹 Mean Absolute Error (MAE):  {mae:.2f}
+🔹 R2 Score:                  {r2:.4f}
+🔹 Accuracy:                   {accuracy:.4f}
+🔹 Precision:                  {precision:.4f}
+🔹 Recall:                     {recall:.4f}
+🔹 F1 Score:                   {f1:.4f}
+===========================================
+"""
+
+with open("result/evaluation.txt", "w") as f:
+    f.write(evaluation_results)
     
 plt.figure(figsize=(10, 5))
 plt.scatter(y_true, y_pred, alpha=0.5, color="blue", label="Predikcija")
