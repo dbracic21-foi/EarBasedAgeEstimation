@@ -1,0 +1,6 @@
+Mean Absolute Error: 18.46
+R2 Score: -0.01
+Accuracy: 0.28
+Precision: 0.14
+Recall: 0.28
+F1 Score: 0.17
