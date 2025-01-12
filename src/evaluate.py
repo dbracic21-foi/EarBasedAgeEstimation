@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+from tensorflow.keras.models import load_model
 import pandas as pd
 import numpy as np
 import cv2
@@ -8,34 +9,9 @@ from sklearn.metrics import mean_absolute_error, r2_score, accuracy_score, preci
 
 
 MODEL_PATH = "./models/age_prediction_model.keras"
-model = tf.keras.models.load_model(MODEL_PATH)
-
-test_df = pd.read_csv("data/test_labels.csv")
 DATA_DIR = "data/processed"
-
-y_true = []
-y_pred = []
-
-for index, row in test_df.iterrows():
-    image_path = f"{DATA_DIR}/{row['image_name']}"
-    if not os.path.exists(image_path):
-        continue
-
-    image = cv2.imread(image_path)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (128,128))
-    image = image / 255.0
-    image = np.expand_dims(image, axis=0)
-
-    predicted_age = model.predict(image)[0][0]
-    y_true.append(row["age"])
-    y_pred.append(predicted_age)
-    
-y_true = np.array(y_true, dtype=int)
-y_pred = np.round(y_pred).astype(int)
-mae = mean_absolute_error(y_true, y_pred)
-r2 = r2_score(y_true, y_pred)
-
+TEST_CSV = "./data/test_labels.csv"
+RESULTS_DIR = "result"
 def age_category(age):
     if age < 20:
         return 0
@@ -46,43 +22,65 @@ def age_category(age):
     else:
         return 3
 
-y_true_cat = np.array([age_category(age) for age in y_true])
-y_pred_cat = np.array([age_category(age) for age in y_pred])
+model = load_model(MODEL_PATH)
+test_df = pd.read_csv("data/test_labels.csv")
+test_df["age_category"] = test_df["age"].apply(age_category).astype(str)
+test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255)
+test_generator = test_datagen.flow_from_dataframe(
+    dataframe=test_df,
+    directory=DATA_DIR,
+    x_col="image_name",
+    y_col="age_category",
+    target_size=(128, 128),
+    class_mode="sparse",
+    batch_size=32,
+    shuffle=False
+)
 
-accuracy = accuracy_score(y_true_cat, y_pred_cat)
-precision = precision_score(y_true_cat, y_pred_cat, average="weighted")
-recall = recall_score(y_true_cat, y_pred_cat, average="weighted")
-f1 = f1_score(y_true_cat, y_pred_cat, average="weighted")
+# 📌 Učitavanje treniranog modela
+model = tf.keras.models.load_model(MODEL_PATH)
+print("✅ Model učitan:", MODEL_PATH)
 
-print(f"Mean Absolute Error: {mae:.2f}")
-print(f"R2 Score: {r2:.2f}")
-print(f"Accuracy: {accuracy:.2f}")
-print(f"Precision: {precision:.2f}")
-print(f"Recall: {recall:.2f}")
-print(f"F1 Score: {f1:.2f}")
+# 📌 Predviđanje rezultata
+predictions = model.predict(test_generator)
+predicted_classes = np.argmax(predictions, axis=1)
 
-evaluation_results = f"""
-===========================================
-        📊 EVALUACIJA MODELA
-===========================================
-🔹 Mean Absolute Error (MAE):  {mae:.2f}
-🔹 R2 Score:                  {r2:.4f}
-🔹 Accuracy:                   {accuracy:.4f}
-🔹 Precision:                  {precision:.4f}
-🔹 Recall:                     {recall:.4f}
-🔹 F1 Score:                   {f1:.4f}
-===========================================
-"""
+# 📌 Stvarne oznake
+true_classes = test_generator.classes
 
-with open("result/evaluation.txt", "w") as f:
-    f.write(evaluation_results)
-    
-plt.figure(figsize=(10, 5))
-plt.scatter(y_true, y_pred, alpha=0.5, color="blue", label="Predikcija")
-plt.plot([min(y_true), max(y_true)], [min(y_true), max(y_true)], color="red", linestyle="--", label="Idealna predikcija")
-plt.xlabel("Stvarna dob")
-plt.ylabel("Predviđena dob")
-plt.title("Stvarna vs. Predviđena dob")
+# 📌 Izračun metrike
+accuracy = accuracy_score(true_classes, predicted_classes)
+precision = precision_score(true_classes, predicted_classes, average="macro", zero_division=1)
+recall = recall_score(true_classes, predicted_classes, average="macro", zero_division=1)
+f1 = f1_score(true_classes, predicted_classes, average="macro")
+
+# 📌 Ispis rezultata
+print("\n🎯 **Evaluacija Modela:**")
+print(f"✅ Accuracy: {accuracy:.2%}")
+print(f"✅ Precision: {precision:.2%}")
+print(f"✅ Recall: {recall:.2%}")
+print(f"✅ F1 Score: {f1:.2%}")
+
+# 📌 Spremanje rezultata u tekstualni fajl
+with open(os.path.join(RESULTS_DIR, "evaluation.txt"), "w") as f:
+    f.write("=======================================\n")
+    f.write("🎯 EVALUACIJA MODELA\n")
+    f.write("=======================================\n")
+    f.write(f"✅ Accuracy: {accuracy:.2%}\n")
+    f.write(f"✅ Precision: {precision:.2%}\n")
+    f.write(f"✅ Recall: {recall:.2%}\n")
+    f.write(f"✅ F1 Score: {f1:.2%}\n")
+    f.write("=======================================\n")
+
+# 📌 Kreiranje grafičkog prikaza predikcija
+plt.figure(figsize=(8,6))
+plt.scatter(true_classes, predicted_classes, color="blue", label="Predikcija")
+plt.plot([0, 3], [0, 3], linestyle="dashed", color="red", label="Idealna predikcija")
+plt.xlabel("Stvarna dobna skupina")
+plt.ylabel("Predviđena dobna skupina")
 plt.legend()
-plt.savefig("result/predictions_plot.png")
-plt.show()
+plt.title("Stvarna vs. Predviđena dobna skupina")
+plt.savefig(os.path.join(RESULTS_DIR, "predictions_plot.png"))
+plt.close()
+
+print("📊 Rezultati spremljeni u 'result/' folder.")
