@@ -37,42 +37,34 @@ test_generator = test_datagen.flow_from_dataframe(
     shuffle=False
 )
 
-# 📌 Učitavanje treniranog modela
 model = tf.keras.models.load_model(MODEL_PATH)
 print("✅ Model učitan:", MODEL_PATH)
 
-# 📌 Predviđanje rezultata
 predictions = model.predict(test_generator)
 predicted_classes = np.argmax(predictions, axis=1)
 
-# 📌 Stvarne oznake
 true_classes = test_generator.classes
 
-# 📌 Izračun metrike
 accuracy = accuracy_score(true_classes, predicted_classes)
 precision = precision_score(true_classes, predicted_classes, average="macro", zero_division=1)
 recall = recall_score(true_classes, predicted_classes, average="macro", zero_division=1)
 f1 = f1_score(true_classes, predicted_classes, average="macro")
 
-# 📌 Ispis rezultata
-print("\n🎯 **Evaluacija Modela:**")
-print(f"✅ Accuracy: {accuracy:.2%}")
-print(f"✅ Precision: {precision:.2%}")
-print(f"✅ Recall: {recall:.2%}")
-print(f"✅ F1 Score: {f1:.2%}")
+print(f"Accuracy: {accuracy:.2%}")
+print(f"Precision: {precision:.2%}")
+print(f"Recall: {recall:.2%}")
+print(f"F1 Score: {f1:.2%}")
 
-# 📌 Spremanje rezultata u tekstualni fajl
 with open(os.path.join(RESULTS_DIR, "evaluation.txt"), "w") as f:
     f.write("=======================================\n")
-    f.write("🎯 EVALUACIJA MODELA\n")
+    f.write("   EVALUACIJA MODELA\n")
     f.write("=======================================\n")
-    f.write(f"✅ Accuracy: {accuracy:.2%}\n")
-    f.write(f"✅ Precision: {precision:.2%}\n")
-    f.write(f"✅ Recall: {recall:.2%}\n")
-    f.write(f"✅ F1 Score: {f1:.2%}\n")
+    f.write(f"  Accuracy: {accuracy:.2%}\n")
+    f.write(f"  Precision: {precision:.2%}\n")
+    f.write(f"   Recall: {recall:.2%}\n")
+    f.write(f"   F1 Score: {f1:.2%}\n")
     f.write("=======================================\n")
 
-# 📌 Kreiranje grafičkog prikaza predikcija
 plt.figure(figsize=(8,6))
 plt.scatter(true_classes, predicted_classes, color="blue", label="Predikcija")
 plt.plot([0, 3], [0, 3], linestyle="dashed", color="red", label="Idealna predikcija")
@@ -83,4 +75,3 @@ plt.title("Stvarna vs. Predviđena dobna skupina")
 plt.savefig(os.path.join(RESULTS_DIR, "predictions_plot.png"))
 plt.close()
 
-print("📊 Rezultati spremljeni u 'result/' folder.")
