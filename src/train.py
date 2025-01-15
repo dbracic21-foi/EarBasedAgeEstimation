@@ -99,7 +99,7 @@ early_stopping = keras.callbacks.EarlyStopping(
 history = model.fit(
     train_generator,
     validation_data=test_generator,
-    epochs=30,
+    epochs=10,
     callbacks=[early_stopping]
 )
 
@@ -126,4 +126,3 @@ plt.close()
 MODEL_PATH = "models/age_prediction_model.keras"
 model.save(MODEL_PATH)
 
-print("✅ Model saved at:", MODEL_PATH)
